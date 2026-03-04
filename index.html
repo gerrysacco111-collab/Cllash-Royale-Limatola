@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Clash Royale: Limatola Edition</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    <link href="https://fonts.cdnfonts.com/css/supercell-magic" rel="stylesheet">
+
+    <style>
+        :root { --blue: #1a3a66; --dark: #050b16; --gold: #ffeb3b; }
+        body { margin: 0; background: var(--dark); font-family: 'Supercell-Magic', sans-serif; height: 100dvh; width: 100vw; overflow: hidden; display: flex; align-items: center; justify-content: center; user-select: none; touch-action: none; }
+
+        .bg-container { position: absolute; inset: 0; background: radial-gradient(circle, var(--blue) 0%, var(--dark) 100%); z-index: -2; }
+        .bg-diamonds { position: absolute; width: 200%; height: 200%; top: -50%; left: -50%; background-image: linear-gradient(30deg, rgba(255,255,255,0.03) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,0.03) 87.5%), linear-gradient(150deg, rgba(255,255,255,0.03) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,0.03) 87.5%); background-size: 60px 105px; animation: moveBg 20s linear infinite; }
+        @keyframes moveBg { from { transform: translate(0,0); } to { transform: translate(60px, 105px); } }
+
+        /* PARTICELLE */
+        .particle { position: fixed; pointer-events: none; z-index: 1000; font-size: 24px; color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+        @keyframes burst { 0% { transform: translate(-50%,-50%) scale(1.5); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
+
+        /* SCHERMATE */
+        .overlay-screen { position: fixed; inset: 0; z-index: 20000; display: flex; align-items: center; justify-content: center; background: black; transition: opacity 0.8s ease; }
+        .full-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        #stars-wrapper { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); width: 140px; height: 100px; z-index: 100; pointer-events: none; }
+        .star-ui { position: absolute; font-size: 28px; color: var(--gold); text-shadow: 0 0 12px var(--gold), 0 0 5px #000; animation: starPop 0.3s forwards; }
+        @keyframes starPop { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
+
+        model-viewer { width: 100%; height: 80vh; z-index: 5; outline: none; display: none; }
+        .heavy-shake { animation: shake 0.1s infinite; }
+        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(5px, 5px); } 75% { transform: translate(-5px, -5px); } }
+
+        #video-container { position: fixed; inset: 0; z-index: 30000; display: none; background: black; }
+        video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        #video-tap { position: absolute; bottom: 12%; width: 100%; text-align: center; color: white; font-size: 14px; text-shadow: 0 2px 10px #000; display: none; animation: pulse 1s infinite; pointer-events: none; }
+
+        /* OVERLAY FINALE FIXATO */
+        #reward-overlay { 
+            position: fixed; inset: 0; z-index: 31000; display: none; 
+            flex-direction: column; align-items: center; justify-content: center; 
+            background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); 
+            cursor: pointer; pointer-events: all;
+        }
+        .reward-img { width: 85vw; max-width: 400px; pointer-events: none; animation: rewardIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        @keyframes rewardIn { from { transform: scale(0) rotate(-10deg); } to { transform: scale(1) rotate(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+        #flash { position: fixed; inset: 0; background: white; opacity: 0; z-index: 40000; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div id="screen-jingle" class="overlay-screen" onpointerdown="startAll()">
+    <img class="full-img" src="https://raw.githubusercontent.com/gerrysacco111-collab/Cllash-Royale-Limatola/189892aac9ac13dbf32a48752e35e85c9d89205a/Gemini_Generated_Image_bltmqgbltmqgbltm.png">
+    <div style="position: absolute; bottom: 20%; color: white; font-size: 10px; opacity: 0.6; animation: pulse 1.5s infinite;">TOCCA PER INIZIARE</div>
+</div>
+
+<div id="screen-loading" class="overlay-screen" style="display:none; opacity:0;">
+    <img class="full-img" src="https://raw.githubusercontent.com/gerrysacco111-collab/Cllash-Royale-Limatola/189892aac9ac13dbf32a48752e35e85c9d89205a/Chest%20%C3%A8%20Limatola.png">
+</div>
+
+<div class="bg-container"><div class="bg-diamonds"></div></div>
+<div id="stars-wrapper"></div>
+<div id="flash"></div>
+<model-viewer id="baule" src="https://raw.githubusercontent.com/gerrysacco111-collab/Clah-Royale-Chest/main/model%20(3).glb" camera-orbit="0deg 75deg 105%" interaction-prompt="none"></model-viewer>
+
+<div id="video-container" onpointerdown="startPhase2()">
+    <video id="luigi-video" playsinline>
+        <source src="https://raw.githubusercontent.com/gerrysacco111-collab/Cllash-Royale-Limatola/189892aac9ac13dbf32a48752e35e85c9d89205a/Luigi%20Cazzeggio%20Time.mp4" type="video/mp4">
+    </video>
+    <div id="video-tap">TOCCA PER IL VERO PREMIO...</div>
+</div>
+
+<div id="reward-overlay" onpointerdown="location.reload()">
+    <img class="reward-img" src="https://github.com/gerrysacco111-collab/Clah-Royale-Card/blob/5960827257cc153ac47ffae6ab52de447bfa0a04/Immagine_2026-03-04_105123-removebg-preview__1_-removebg-preview.png?raw=true">
+    <div style="color:white; margin-top:30px; text-align:center; font-size:18px; pointer-events:none;">IL TUO VERO REGALO: ANDURIL!</div>
+    <div style="color:white; margin-top:15px; opacity:0.5; font-size:12px; pointer-events:none;">Tocca per ricominciare</div>
+</div>
+
+<script>
+    const audioJingle = new Audio('https://raw.githubusercontent.com/gerrysacco111-collab/Cllash-Royale-Limatola/189892aac9ac13dbf32a48752e35e85c9d89205a/supercell_jingle.ogg');
+    const audioMilanNapoli = new Audio('https://raw.githubusercontent.com/gerrysacco111-collab/Cllash-Royale-Limatola/189892aac9ac13dbf32a48752e35e85c9d89205a/Peppino%20Milan%20Napoli.wav');
+    const audioDrop = new Audio('https://raw.githubusercontent.com/gerrysacco111-collab/Cllash-Royale-Limatola/189892aac9ac13dbf32a48752e35e85c9d89205a/Chests_star_chest_open_01.ogg');
+    const audioBkg = new Audio('https://raw.githubusercontent.com/gerrysacco111-collab/Cllash-Royale-Limatola/189892aac9ac13dbf32a48752e35e85c9d89205a/Chest%20Opening%20Sound.wav');
+    const audioFah = new Audio('https://raw.githubusercontent.com/gerrysacco111-collab/Cllash-Royale-Limatola/189892aac9ac13dbf32a48752e35e85c9d89205a/FAAAAAH.wav');
+    audioBkg.loop = true;
+
+    const baule = document.getElementById('baule');
+    const videoCont = document.getElementById('video-container');
+    const video = document.getElementById('luigi-video');
+    const videoTap = document.getElementById('video-tap');
+    
+    let clicks = 0, targetYaw = 0, currentYaw = 0, gamePhase = 1, canClickVideo = false;
+
+    function createBurst() {
+        for(let i=0; i<12; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle'; p.innerHTML = '★';
+            p.style.left = '50%'; p.style.top = '50%';
+            const tx = (Math.random() - 0.5) * 500;
+            const ty = (Math.random() - 0.5) * 500;
+            p.style.setProperty('--tx', `${tx}px`);
+            p.style.setProperty('--ty', `${ty}px`);
+            p.style.animation = `burst 0.8s cubic-bezier(0,0.5,0.5,1) forwards`;
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 800);
+        }
+    }
+
+    function startAll() {
+        audioJingle.play().catch(()=>{});
+        document.getElementById('screen-jingle').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('screen-jingle').style.display = 'none';
+            const sL = document.getElementById('screen-loading');
+            sL.style.display = 'flex'; sL.style.opacity = '1';
+            audioMilanNapoli.play();
+            audioMilanNapoli.onended = () => {
+                sL.style.opacity = '0';
+                setTimeout(() => {
+                    sL.style.display = 'none';
+                    baule.style.display = 'block';
+                    audioDrop.play(); audioBkg.play();
+                }, 800);
+            };
+        }, 800);
+    }
+
+    function update() {
+        currentYaw += (targetYaw - currentYaw) * 0.15;
+        baule.cameraOrbit = `${currentYaw}deg 75deg 105%`;
+        requestAnimationFrame(update);
+    }
+    update();
+
+    function renderStarsUI(n) {
+        const sw = document.getElementById('stars-wrapper'); sw.innerHTML = '';
+        const coords = { 1:[{x:50,y:50}], 2:[{x:35,y:50},{x:65,y:50}], 3:[{x:20,y:50},{x:50,y:50},{x:80,y:50}], 4:[{x:50,y:20},{x:25,y:50},{x:75,y:50},{x:50,y:80}], 5:[{x:20,y:35},{x:50,y:35},{x:80,y:35},{x:35,y:75},{x:65,y:75}] };
+        if (coords[n]) coords[n].forEach(p => { 
+            const s = document.createElement('span'); s.className='star-ui'; s.innerHTML='★'; 
+            s.style.left=p.x+'%'; s.style.top=p.y+'%'; sw.appendChild(s); 
+        });
+    }
+
+    const chestAction = (e) => {
+        if (clicks >= 6) return;
+        clicks++;
+        createBurst();
+        if (clicks < 6) {
+            targetYaw += 720;
+            audioFah.currentTime = 0; audioFah.play();
+            renderStarsUI(clicks);
+        } else {
+            baule.classList.add('heavy-shake');
+            document.getElementById('stars-wrapper').style.opacity = "0";
+            setTimeout(() => {
+                document.getElementById('flash').animate([{opacity:0},{opacity:1},{opacity:0}], {duration:600});
+                if (gamePhase === 1) {
+                    audioBkg.pause(); baule.style.display = "none";
+                    videoCont.style.display = "block"; video.play();
+                    setTimeout(() => { videoTap.style.display = "block"; canClickVideo = true; }, 2000);
+                } else {
+                    baule.style.display = "none";
+                    document.getElementById('reward-overlay').style.display = "flex";
+                }
+            }, 1000);
+        }
+    };
+
+    function startPhase2() {
+        if (!canClickVideo) return;
+        videoCont.style.display = 'none'; video.pause();
+        gamePhase = 2; clicks = 0;
+        baule.style.display = "block"; baule.classList.remove('heavy-shake');
+        document.getElementById('stars-wrapper').innerHTML = "";
+        document.getElementById('stars-wrapper').style.opacity = "1";
+        audioBkg.play(); audioDrop.play();
+        canClickVideo = false; videoTap.style.display = "none";
+    }
+
+    baule.addEventListener('pointerdown', chestAction);
+</script>
+</body>
+</html>
